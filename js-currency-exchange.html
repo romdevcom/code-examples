@@ -1,0 +1,62 @@
+<div class="container">
+    <form id="exchange">
+        <label>
+            Сума
+            <input id="exchange-value" type="number" name="sum">
+        </label>
+        <label>
+            Валюта
+            <select id="exchange-currency" name="currency">
+                <option value="1">---</option>
+            </select>
+        </label>
+        <strong id="exchange-result"></strong>
+    </form>
+</div>
+<script>
+    async function getExchangeData() {
+        try {
+            let response = await fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json');
+            if (!response.ok) {
+                throw new Error('Запит має погану відповідь');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Помилка:', error);
+        }
+    }
+
+    async function populateCurrencySelect() {
+        let selectElement = document.getElementById('exchange-currency');
+        let exchangeData = await getExchangeData();
+
+        for (let currency of exchangeData) {
+            let option = document.createElement('option');
+            option.value = currency.rate;
+            option.textContent = currency.txt;
+            selectElement.appendChild(option);
+        }
+        selectElement.addEventListener('change', updateExchangeResult);
+    }
+
+    function updateExchangeResult() {
+        let inputElement = document.getElementById('exchange-value');
+        let selectElement = document.getElementById('exchange-currency');
+        let resultElement = document.getElementById('exchange-result');
+
+        let inputValue = parseFloat(inputElement.value);
+        let selectedRate = parseFloat(selectElement.value);
+
+        if (!isNaN(inputValue) && !isNaN(selectedRate)) {
+            let result = inputValue * selectedRate;
+            resultElement.textContent = result.toFixed(2) + ' грн';
+        } else {
+            resultElement.textContent = '';
+        }
+    }
+
+    const inputElement = document.getElementById('exchange-value');
+    inputElement.addEventListener('input', updateExchangeResult);
+
+    populateCurrencySelect();
+</script>
